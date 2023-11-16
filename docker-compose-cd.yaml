@@ -21,6 +21,25 @@ services:
       - ${MONGO_PORT}:27017
     networks:
       - custom
+  app:
+    env_file:
+      - .env
+    environment:
+      MONGO_URL: mongo
+    container_name: app
+    image: webapp
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "python3 main.py"
+    ports:
+      - 8000:8000
+    networks:
+      - custom
 
 networks:
   custom:
