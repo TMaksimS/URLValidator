@@ -8,6 +8,7 @@ from email_validator import validate_email
 
 class Validator:
     """Object validator"""
+
     def __init__(self, value: str):
         self.value = value
 
@@ -55,7 +56,8 @@ class Validator:
     @staticmethod
     async def parce(data: str) -> dict:
         """Parce query from URL"""
-        obj = data.split("&")
+        new_data = data.replace("%20", " ")
+        obj = new_data.split("&")
         res = {}
         for item in obj:
             row = item.split("=")
