@@ -10,6 +10,7 @@ from settings import LOGER
 
 class HandBook:
     """CRUD operations for HandBook repository"""
+
     def __init__(self):
         self.collection = hb
 
@@ -26,7 +27,7 @@ class HandBook:
         """Returning template name by _id"""
         res = self.collection.find_one(
             {"_id": obj_id},
-            {"_id": 0, "template_name": 1}
+            {"_id": 0, "template_name": 0}
         )
         return res
 
@@ -34,38 +35,38 @@ class HandBook:
     async def get_template(self, data: dict) -> str | None:
         """Returning the closest matching document and added new document"""
         existing_values = []
-        final_query = {}
         for key, value in data.items():
             if self.collection.find_one({key: value}):
-                existing_values.append({key: value})
-            LOGER.info(f"Ищем ключ и значение в бд {key}, {value}")
-        LOGER.info(f"Искомые поля: {existing_values}")
-        for i in range(len(existing_values)):
-            if i == len(existing_values) - 1:
-                break
-            query = existing_values[i]
-            for k in range(len(existing_values[i:])):
-                if self.collection.find_one({**query, **existing_values[k]}):
-                    query = {**query, **existing_values[k]}
-                else:
-                    continue
-            if len(final_query) < len(query):
-                final_query = query
-            LOGER.info(f"Финальный запрос каждой интерации {query}")
-        res = self.collection.find_one(
-            final_query,
-            {"_id": 0, "template_name": 1}
-        )
-        if len(data) > len(existing_values):
-            await self.insert(data)
-            return res
-        return res
+                existing_values.append({"$and": [{key: value}]})
+        if len(existing_values) > 0:
+            query = {"$or": existing_values}
+            LOGER.info(f"query = {query}")
+            rows = self.collection.find(query, {"_id": 0})
+            res = {}
+            for row in rows:
+                row_name = row.get("template_name")
+                row.pop("template_name")
+                flag = True
+                if len({**row, **data}) == len(data):
+                    for key in row.keys():
+                        if row.get(key) != data.get(key):
+                            flag = False
+                    row["template_name"] = row_name
+                    if flag is True and len(res) < len(row):
+                        res = row
+            if len(res):
+                return res.get("template_name")
+        return None
 
     @LOGER.catch
-    async def get_all_templates(self) -> dict:
+    async def get_all_templates_with_page(
+            self,
+            page_number: int,
+            page_size: int
+    ) -> dict:
         """Returning all documents from collection"""
         res = {"templates": []}
-        a = self.collection.find()
+        a = self.collection.find().skip((page_number - 1) * page_size).limit(page_size)
         for item in a:
             res["templates"].append(item)
         return res

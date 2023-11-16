@@ -1,2 +1,5 @@
 [MESSAGES CONTROL]
 disable = C0200, W0707
+
+[MASTER]
+ignore-paths = tests
