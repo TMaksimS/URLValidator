@@ -52,6 +52,16 @@ class Validator:
                 return False
         return False
 
+    @staticmethod
+    async def parce(data: str) -> dict:
+        """Parce query from URL"""
+        obj = data.split("&")
+        res = {}
+        for item in obj:
+            row = item.split("=")
+            res[row[0]] = row[1]
+        return res
+
     async def validate(self) -> str:
         """Head coroutine for typing"""
         if await self._email():
